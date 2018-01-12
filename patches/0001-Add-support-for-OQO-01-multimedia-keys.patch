@@ -1,0 +1,97 @@
+From ebbd4a615709ae63919345efc08b950cb47fdd90 Mon Sep 17 00:00:00 2001
+From: Jamie Lentin <jm@lentin.co.uk>
+Date: Thu, 30 Apr 2009 21:53:56 +0100
+Subject: [PATCH] Add support for OQO 01+ multimedia keys
+
+
+Signed-off-by: Jamie Lentin <jm@lentin.co.uk>
+---
+ drivers/input/keyboard/atkbd.c |   41 +++++++++++++++++++++++++++++++++++++++-
+ 1 files changed, 40 insertions(+), 1 deletions(-)
+
+diff --git a/drivers/input/keyboard/atkbd.c b/drivers/input/keyboard/atkbd.c
+index 444dec0..ecf9e9d 100644
+--- a/drivers/input/keyboard/atkbd.c
++++ b/drivers/input/keyboard/atkbd.c
+@@ -227,10 +227,12 @@ struct atkbd {
+ };
+ 
+ /*
+- * System-specific ketymap fixup routine
++ * System-specific keymap fixup routine
+  */
+ static void (*atkbd_platform_fixup)(struct atkbd *, const void *data);
+ static void *atkbd_platform_fixup_data;
++static unsigned int (*atkbd_platform_fixup_function)(struct atkbd *,
++				unsigned int);
+ 
+ static ssize_t atkbd_attr_show_helper(struct device *dev, char *buf,
+ 				ssize_t (*handler)(struct atkbd *, char *));
+@@ -431,6 +433,12 @@ static irqreturn_t atkbd_interrupt(struct serio *serio, unsigned char data,
+ 
+ 	code = atkbd_compat_scancode(atkbd, code);
+ 
++	/*
++	 * Perform platform-specific fixups
++	 */
++	if (unlikely(atkbd_platform_fixup_function))
++		code = atkbd_platform_fixup_function(atkbd, code);
++
+ 	if (atkbd->emul && --atkbd->emul)
+ 		goto out;
+ 
+@@ -895,6 +903,21 @@ static unsigned int atkbd_amilo_pa1510_forced_release_keys[] = {
+ };
+ 
+ /*
++ * OQO 01+ multimedia keys (64--66), say e0 6x when they mean f0 6x, i.e. upon
++ * release. Remap e4--e6 (from compat_scancode) to a release of 64--66.
++ */
++static unsigned int atkbd_oqo_01plus_remap_release_keys(struct atkbd *atkbd,
++				unsigned int code)
++{
++	if (code == 0xe4 || code == 0xe5 || code == 0xe6) {
++		atkbd->release = 1;
++		code &= 0x7f;
++	}
++
++	return code;
++}
++
++/*
+  * atkbd_set_keycode_table() initializes keyboard's keycode table
+  * according to the selected scancode set
+  */
+@@ -1478,6 +1501,13 @@ static int __init atkbd_setup_forced_release(const struct dmi_system_id *id)
+ 	return 0;
+ }
+ 
++static int __init atkbd_setup_inline_fix(const struct dmi_system_id *id)
++{
++	atkbd_platform_fixup_function = id->driver_data;
++
++	return 0;
++}
++
+ static struct dmi_system_id atkbd_dmi_quirk_table[] __initdata = {
+ 	{
+ 		.ident = "Dell Laptop",
+@@ -1560,6 +1590,15 @@ static struct dmi_system_id atkbd_dmi_quirk_table[] __initdata = {
+ 		.callback = atkbd_setup_forced_release,
+ 		.driver_data = atkbd_amilo_pa1510_forced_release_keys,
+ 	},
++	{
++		.ident = "OQO Model 01+",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "OQO"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "ZEPTO"),
++		},
++		.callback = atkbd_setup_inline_fix,
++		.driver_data = atkbd_oqo_01plus_remap_release_keys,
++	},
+ 	{ }
+ };
+ 
+-- 
+1.6.2.1
+

@@ -1,0 +1,12 @@
+--- a/drivers/acpi/processor_idle.c	2009-03-28 19:59:57.000000000 +0000
++++ b/drivers/acpi/processor_idle.c	2009-03-28 19:54:10.000000000 +0000
+@@ -373,6 +373,9 @@ int acpi_processor_resume(struct acpi_de
+ static int tsc_halts_in_c(int state)
+ {
+ 	switch (boot_cpu_data.x86_vendor) {
++	case X86_VENDOR_TRANSMETA:
++		/* All Transmeta CPUs have a constant TSC */
++		return 0; 
+ 	case X86_VENDOR_AMD:
+ 		/*
+ 		 * AMD Fam10h TSC will tick in all

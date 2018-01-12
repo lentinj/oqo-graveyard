@@ -1,0 +1,16 @@
+--- a/drivers/ide/alim15x3.c	2009-08-16 22:19:38.000000000 +0100
++++ b/drivers/ide/alim15x3.c	2009-06-16 21:35:53.000000000 +0100
+@@ -337,6 +337,13 @@ static const struct dmi_system_id cable_
+ 			DMI_MATCH(DMI_PRODUCT_NAME, "S1800-814"),
+ 		},
+ 	},
++	{
++		.ident = "OQO Model 01+",
++		.matches = {
++			DMI_MATCH(DMI_SYS_VENDOR, "OQO"),
++			DMI_MATCH(DMI_PRODUCT_NAME, "ZEPTO"),
++		},
++	},
+ 	{ }
+ };
+ 

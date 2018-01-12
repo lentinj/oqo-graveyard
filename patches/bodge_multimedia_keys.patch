@@ -1,0 +1,19 @@
+--- a/drivers/input/keyboard/atkbd.c	2009-02-20 21:24:49.000000000 +0000
++++ b/drivers/input/keyboard/atkbd.c	2009-02-22 00:31:13.000000000 +0000
+@@ -337,8 +337,14 @@ static unsigned int atkbd_compat_scancod
+ 			code |= 0x100;
+         } else {
+ 		code = (code & 0x7f) | ((code & 0x80) << 1);
+-		if (atkbd->emul == 1)
+-			code |= 0x80;
++		if (atkbd->emul == 1) {
++			if(code == 0x64 || code == 0x65 || code == 0x66) {
++				/* OQO 01+ multimedia keys say e0 66 when they mean release */
++				atkbd->release = 1;
++			} else {
++				code |= 0x80;
++			}
++		}
+ 	}
+ 
+ 	return code;

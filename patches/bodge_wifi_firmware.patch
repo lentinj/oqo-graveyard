@@ -1,0 +1,40 @@
+diff --git a/drivers/net/wireless/at76c50x-usb.c b/drivers/net/wireless/at76c50x-usb.c
+index e3caeef..ca68847 100644
+--- a/drivers/net/wireless/at76c50x-usb.c
++++ b/drivers/net/wireless/at76c50x-usb.c
+@@ -45,6 +45,7 @@
+ #include <net/mac80211.h>
+ 
+ #include "at76c50x-usb.h"
++#include "FW5a58.h" /*JL- Bodge in firmware */
+ 
+ /* Version information */
+ #define DRIVER_NAME "at76c50x-usb"
+@@ -118,7 +119,17 @@ static struct fwentry firmwares[] = {
+ 	[BOARD_503_ACC] = { "atmel_at76c503-rfmd-acc.bin" },
+ 	[BOARD_505] = { "atmel_at76c505-rfmd.bin" },
+ 	[BOARD_505_2958] = { "atmel_at76c505-rfmd2958.bin" },
+-	[BOARD_505A] = { "atmel_at76c505a-rfmd2958.bin" },
++	[BOARD_505A] = { /* JL - We already loaded this, honest */
++		"atmel_at76c505a-rfmd2958.bin",
++		NULL,
++		17764,
++		26800,
++		&BuildInExternalFW[0],
++		&BuildInInternalFW[0],
++		BOARD_505A,
++		{1,103,0,2},
++		1
++	},
+ 	[BOARD_505AMX] = { "atmel_at76c505amx-rfmd.bin" },
+ };
+ 
+@@ -2410,6 +2421,8 @@ static int at76_probe(struct usb_interface *interface,
+ 				   "error %d getting firmware version\n", ret);
+ 			goto error;
+ 		}
++		dev_printk(KERN_DEBUG, &interface->dev,
++			"Device reports f/w version %d.%d.%d-%d",fwv.major,fwv.minor,fwv.patch,fwv.build);
+ 	}
+ 
+ 	priv = at76_alloc_new_device(udev);
